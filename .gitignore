@@ -1,0 +1,6 @@
+*.bak
+data-cache/
+dictionary/
+tmp/
+__pycache__/
+*.pyc

@@ -1,68 +1,105 @@
-# 中間アプリ
-
+# e-Stat API Adaptor
 
 ## 概要
-中間アプリはe-Stat APIを使いやすくするためのPythonライブラリです。
+e-Stat API Adaptorは、日本の政府統計ポータル「e-Stat」のAPIを使いやすくするためのPythonライブラリです。
 
 ## License
-* MIT  
+* MIT
     * see License.txt
-    
-## 事前にインストールするライブラリ等
-本ライブラリを使用する前に下記のライブラリ等は予めインストールしてください。
 
-### Pythonライブラリ
-	pandas,numpy,math,Flask
+## 重要な変更点 (Python 3対応版)
+
+このバージョンでは以下の大きな変更が行われています:
+
+### セキュリティとモダナイゼーション
+- **Python 3.7以上に対応** (Python 2はサポート終了)
+- **urllib2からrequestsライブラリへ移行** - より安全で使いやすいHTTP通信
+- **コマンドインジェクション脆弱性を修正** - `shell=True`を削除し、安全なファイル操作へ移行
+- **入力検証の強化** - 統計IDとクエリのバリデーション機能を追加
+- **エラーハンドリングの改善** - 詳細なログ出力と適切な例外処理
+- **自動ディレクトリ作成** - 必要なディレクトリを自動的に作成
+
+## 必要な環境
+
+### Python バージョン
+- **Python 3.7以上** (Python 2はサポートされていません)
+
+## インストール
+
+### 1. 依存ライブラリのインストール
+```bash
+pip install -r requirements.txt
+```
+
+### 必要なライブラリ
+- requests >= 2.31.0 (HTTP通信用)
+- pandas >= 1.3.0 (データ処理用)
+- numpy >= 1.21.0 (数値計算用)
+- Flask >= 2.0.0 (Webサーバー用)
 
 
 ## ディレクトリ及びファイル構成
-(ディレクトリがない場合は作成してください)
 
-    ├ data-cache/	 				 キャッシュ用ディレクトリ(データがCSV形式で保存されます)  
-    ├ dictionary/					 辞書用ディレクトリ(検索用の辞書が作成されます)  
-    ├ python/						 Pythonライブラリ用ディレクトリ  
-    │  └ e_STat_API_Adaptor.py    
-    ├ tmp/						 一時ダウンロード用ディレクトリ(json形式の元データを一時的に保存します)  
-    └ www/						 Web公開用ディレクトリ  
-       └ run.py					 Web用中間アプリスクリプト  
+```
+.
+├── data-cache/          # キャッシュ用ディレクトリ(CSV形式でデータを保存)
+├── dictionary/          # 辞書用ディレクトリ(検索用のインデックスファイル)
+│   └── detail/         # 詳細検索用インデックス(N-gram)
+├── tmp/                # 一時ダウンロード用ディレクトリ(JSON形式)
+├── python/             # Pythonライブラリ用ディレクトリ
+│   ├── e_Stat_API_Adaptor.py  # メインライブラリ
+│   └── examples.py     # 使用例
+├── www/                # Web公開用ディレクトリ
+│   └── run.py          # Flask Webサーバー
+├── requirements.txt    # 依存ライブラリリスト
+└── README.md           # このファイル
+```
 
-なお、インスタンスの生成時及びe_STat_API_Adaptor.py内でこれらのディレクトリの設定を行えます。
+**注意**: 必要なディレクトリは初回実行時に自動的に作成されます。
 
-## インスタンスの生成例
-インスタンスの生成にはe-Stat APIのサイトで取得できるappIDが必要になります。
-予め取得してください。
+## クイックスタート
 
-    #!/usr/bin/env python
-    # -*- coding: utf-8 -*-
-    import sys
-    sys.path.append('./python')
-    import e_Stat_API_Adaptor
-    eStatAPI = e_Stat_API_Adaptor.e_Stat_API_Adaptor({
-		# 取得したappId
-		'appId'		: 'hogehoge'
-		# データをダウンロード時に一度に取得するデータ件数
-		,'limit'	: '10000'
-		# next_keyに対応するか否か(非対応の場合は上記のlimitで設定した件数のみしかダウンロードされない)
-		# 対応時はTrue/非対応時はFalse
-		,'next_key'	: True
-		# 中間アプリの設置ディレクトリ
-		,'directory':'./'
-		# APIのバージョン
-		,'ver'		:'2.0'
-    })
+### 1. e-Stat APIキーの取得
+[e-Stat API](https://www.e-stat.go.jp/)のサイトでアカウントを作成し、appIDを取得してください。
 
-## 最初に行うこと
-まず、ディレクトリ等を作成後に下記を実行してください。統計IDを検索するために必要なインデックスが生成されます。
+### 2. インスタンスの生成例
 
-    # 全ての統計表IDをローカルにダウンロード
-    eStatAPI.load_all_ids()
-    # ダウンロードした統計表IDからインデックスを作成 
-    eStatAPI.build_statid_index()
+```python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import sys
+sys.path.append('./python')
+import e_Stat_API_Adaptor
 
-また、下記を実行することで、STATISTICS_NAMEとTITLEから検索用インデックスを作成できます(N-gram形式)。
-    
-    eStatAPI.build_detailed_index()
-    eStatAPI.search_detailed_index('家計')
+eStatAPI = e_Stat_API_Adaptor.e_Stat_API_Adaptor({
+    # 取得したappId
+    'appId': 'your_app_id_here',
+    # データをダウンロード時に一度に取得するデータ件数
+    'limit': '10000',
+    # next_keyに対応するか否か
+    # True: 全データをダウンロード、False: limit件数のみ
+    'next_key': True,
+    # ライブラリの設置ディレクトリ(絶対パス推奨)
+    'directory': './',
+    # e-Stat APIのバージョン
+    'ver': '2.0'
+})
+```
+
+### 3. 初回セットアップ
+
+統計IDを検索するために必要なインデックスを生成します。
+
+```python
+# 全ての統計表IDをローカルにダウンロード
+eStatAPI.load_all_ids()
+
+# ダウンロードした統計表IDからインデックスを作成
+eStatAPI.build_statid_index()
+
+# (オプション) STATISTICS_NAMEとTITLEから詳細検索用インデックスを作成(N-gram形式)
+eStatAPI.build_detailed_index()
+```
 
 ## 機能
 
